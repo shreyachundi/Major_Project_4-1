@@ -1,4 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const SERVER_URL = API_URL.replace(/\/api$/, '');
 const TOKEN_KEY = 'creatoriq_token';
 
 export function getToken() { return localStorage.getItem(TOKEN_KEY); }
@@ -32,6 +33,13 @@ export const api = {
   me:       () => request('/auth/me'),
 
   connectChannel: (url) => request('/channel/connect', { method: 'POST', body: { url } }),
+  connectWithGoogle: (accessToken, userId) =>
+    request('/channel/connect-with-google', {
+      method: 'POST',
+      body: { accessToken, userId },
+      auth: false,
+    }),
+
   channelSummary: () => request('/channel/summary'),
   insights:       () => request('/insights'),
   ideas:          () => request('/ideas'),
@@ -41,3 +49,5 @@ export const api = {
   aiSuggestions:  () => request('/ai/suggestions'),
   aiAsk:          (question) => request('/ai/ask', { method: 'POST', body: { question } }),
 };
+
+export const SERVER_BASE = SERVER_URL;

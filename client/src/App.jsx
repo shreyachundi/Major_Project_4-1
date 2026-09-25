@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Login from './pages/Login.jsx';
 import Connect from './pages/Connect.jsx';
+import AuthCallback from './pages/AuthCallback.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Insights from './pages/Insights.jsx';
 import ContentIdeas from './pages/ContentIdeas.jsx';
@@ -15,13 +16,14 @@ export default function App() {
   if (loading) return <div style={{ padding: 40 }}>Loading…</div>;
 
   const hasChannel = !!user?.channelId;
-  // Allow /connect even if user has a channel — when URL has ?change=1
   const params = new URLSearchParams(location.search);
   const forceConnect = params.get('change') === '1';
 
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to={hasChannel ? '/dashboard' : '/connect'} replace /> : <Login />} />
+
+      <Route path="/auth/callback" element={<AuthCallback />} />
 
       <Route path="/connect" element={
         <ProtectedRoute>
