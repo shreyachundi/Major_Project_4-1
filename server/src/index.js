@@ -16,7 +16,7 @@ import thumbnailsRoutes from './routes/thumbnails.routes.js';
 import scriptRoutes from './routes/script.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import aiRoutes from './routes/ai.routes.js';
-
+import ragRoutes from './routes/rag.routes.js';
 const app = express();
 
 app.use(cors({ origin: env.clientOrigin, credentials: true }));
@@ -52,7 +52,7 @@ app.use('/api/thumbnails', thumbnailsRoutes);
 app.use('/api/script', scriptRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/ai', aiRoutes);
-
+app.use('/api/rag', ragRoutes);
 async function start() {
   await connectDB();
   app.listen(env.port, () => {
