@@ -7,10 +7,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hi! I'm CreatorIQ Assistant. Ask me anything about your channel — performance, ideas, strategy." },
+    { role: 'assistant', content: "Hi! I'm CreatorIQ Assistant. Ask me anything about your channel — performance, ideas, strategy. Click '📚 Index My Videos' first to unlock transcript-based answers." },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [indexed, setIndexed] = useState(false);
+  const [indexing, setIndexing] = useState(false);
   const bottomRef = useRef(null);
   const location = useLocation();
 
@@ -21,6 +23,36 @@ export default function Chatbot() {
   // Hide chatbot on login/connect pages
   if (location.pathname === '/login' || location.pathname === '/connect' || location.pathname === '/') {
     return null;
+  }
+
+  async function indexVideos() {
+    setIndexing(true);
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: '📚 Indexing your videos… this may take 30-60 seconds depending on how many videos you have.',
+    }]);
+
+    try {
+      const res = await fetch(`${API_URL}/rag/index`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to index');
+
+      setIndexed(true);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `✅ Indexed ${data.totalChunks} transcript chunks from ${data.videos.length} videos. Now I can answer questions based on what you actually said in your videos.`,
+      }]);
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `⚠️ Indexing failed: ${err.message}`,
+      }]);
+    } finally {
+      setIndexing(false);
+    }
   }
 
   async function send(text) {
@@ -34,20 +66,30 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/chat`, {
+      const endpoint = indexed ? '/rag/ask' : '/chat';
+      const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify({
+          question: msg,
           message: msg,
           history: newHistory.slice(-8),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+
+      const replyText = data.answer || data.reply || 'No response';
+      const sources = data.sources || [];
+
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: replyText,
+        sources,
+      }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${err.message}` }]);
     } finally {
@@ -99,11 +141,56 @@ export default function Chatbot() {
               background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
               display: 'grid', placeItems: 'center', fontSize: 16,
             }}>🧠</div>
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>CreatorIQ Assistant</div>
-              <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Ask about your channel</div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                {indexed ? '✅ RAG mode — answers from your transcripts' : 'Ask about your channel'}
+              </div>
             </div>
+            {indexed && (
+              <button
+                onClick={indexVideos}
+                disabled={indexing}
+                title="Re-index videos"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-dim)',
+                  borderRadius: 6,
+                  padding: '4px 8px',
+                  fontSize: 11,
+                  cursor: indexing ? 'not-allowed' : 'pointer',
+                  opacity: indexing ? 0.5 : 1,
+                }}
+              >
+                🔄
+              </button>
+            )}
           </div>
+
+          {/* Index Button (shown until indexing is done) */}
+          {!indexed && (
+            <div style={{
+              padding: '10px 16px',
+              borderBottom: '1px solid var(--border)',
+              background: 'rgba(124,92,255,0.05)',
+            }}>
+              <button
+                onClick={indexVideos}
+                disabled={indexing}
+                className="btn"
+                style={{ width: '100%', padding: '8px 0', fontSize: 12 }}
+              >
+                {indexing ? '⏳ Indexing videos…' : '📚 Index My Videos (One-time)'}
+              </button>
+              <div style={{
+                fontSize: 10.5, color: 'var(--text-dim)',
+                marginTop: 6, textAlign: 'center', lineHeight: 1.4,
+              }}>
+                Enables answering questions from your video transcripts
+              </div>
+            </div>
+          )}
 
           {/* Messages */}
           <div style={{
@@ -114,18 +201,54 @@ export default function Chatbot() {
               <div key={i} style={{
                 alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
                 maxWidth: '85%',
-                padding: '10px 14px',
-                borderRadius: 12,
-                background: m.role === 'user'
-                  ? 'linear-gradient(135deg, var(--accent), var(--accent-2))'
-                  : 'var(--bg-3)',
-                color: m.role === 'user' ? '#fff' : 'var(--text)',
-                fontSize: 13, lineHeight: 1.5,
-                whiteSpace: 'pre-wrap',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
               }}>
-                {m.content}
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  background: m.role === 'user'
+                    ? 'linear-gradient(135deg, var(--accent), var(--accent-2))'
+                    : 'var(--bg-3)',
+                  color: m.role === 'user' ? '#fff' : 'var(--text)',
+                  fontSize: 13, lineHeight: 1.6,
+                  whiteSpace: 'pre-wrap',
+                  border: m.role === 'assistant' && indexed
+                    ? '1px solid rgba(124,92,255,0.3)'
+                    : '1px solid transparent',
+                }}>
+                  {m.content}
+                </div>
+
+                {/* Show source videos for RAG answers */}
+                {m.sources && m.sources.length > 0 && (
+                  <div style={{
+                    padding: '8px 12px',
+                    background: 'rgba(124,92,255,0.08)',
+                    border: '1px solid rgba(124,92,255,0.25)',
+                    borderRadius: 8,
+                    fontSize: 11,
+                    color: 'var(--text-dim)',
+                    lineHeight: 1.5,
+                  }}>
+                    <div style={{ fontWeight: 600, color: '#a78bfa', marginBottom: 4 }}>
+                      📚 Sources ({[...new Set(m.sources.map(s => s.videoTitle))].length}):
+                    </div>
+                    {[...new Set(m.sources.map(s => s.videoTitle))].map((title, j) => (
+                      <div key={j} style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        • {title}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+
             {loading && (
               <div style={{
                 alignSelf: 'flex-start',
@@ -133,7 +256,7 @@ export default function Chatbot() {
                 background: 'var(--bg-3)', fontSize: 13,
                 color: 'var(--text-dim)',
               }}>
-                Thinking…
+                {indexed ? '🔍 Searching your videos…' : 'Thinking…'}
               </div>
             )}
             <div ref={bottomRef} />
@@ -148,7 +271,7 @@ export default function Chatbot() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && send()}
-              placeholder="Ask anything…"
+              placeholder={indexed ? 'Ask about your videos…' : 'Ask anything…'}
               style={{
                 flex: 1, background: 'var(--bg-3)',
                 border: '1px solid var(--border)',
