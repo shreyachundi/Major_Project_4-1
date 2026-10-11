@@ -25,8 +25,8 @@ router.get('/', async (req, res) => {
       : '';
 
     const prompt = `
-You are a YouTube growth strategist.
-Generate ${count} NEW, UNIQUE video ideas for this channel.
+You are a YouTube growth strategist AND SEO specialist.
+Based on this channel's data, generate 5 NEW video ideas with SEO-optimized titles.
 
 Channel: ${channel.name}
 Subscribers: ${channel.subscribers}
@@ -35,13 +35,20 @@ ${kpiSummary}
 Recent Videos:
 ${videoTitles}
 
-Top Performing Videos:
-${topList}
-${avoidText}
+Return ONLY a JSON array with exactly 5 objects with these keys:
+- "id": unique string
+- "score": number 0-100
+- "tier": "hot"|"good"|"avg"
+- "title": creative/catchy video title (as before)
+- "seoTitle": SEO-optimized title that includes high-search keywords, current year (2025), numbers, or modifiers like "(Full Guide)", "Ranked", "Beginner to Pro" etc.
+- "keywords": array of 4-6 specific search keywords this video should target
+- "why": 1-2 sentence reason
+- "predictedViews": estimated range
+- "bestLength": recommended length
+- "upload": suggested publish time
 
-Return ONLY a JSON array with exactly ${count} objects with keys:
-"id" (unique string), "score" (0-100), "tier" ("hot"|"good"|"avg"), "title",
-"why", "predictedViews", "bestLength", "upload".
+Example:
+[{"id":"1","score":92,"tier":"hot","title":"I Tried 7 AI Tools for a Week","seoTitle":"7 Best AI Tools for Content Creators in 2025 (Tested & Ranked)","keywords":["best ai tools 2025","ai tools for youtubers","free ai tools","ai content creation"],"why":"Search volume for 'best AI tools 2025' is high and competitors under-serve this niche","predictedViews":"80K–140K","bestLength":"9–12 min","upload":"Tuesday 7 PM"}]
 `.trim();
 
     console.log(`🔵 Generating ${count} ideas (page ${page})...`);

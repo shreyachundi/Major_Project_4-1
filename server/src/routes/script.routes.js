@@ -39,9 +39,20 @@ MAIN CONTENT
 CALL TO ACTION (End)
 [What to ask viewers to do — subscribe, comment, watch next]
 
-TITLE & DESCRIPTION
-[Suggested YouTube title]
-[Suggested description, 2-3 sentences]
+SEO-OPTIMIZED TITLE
+[Search-friendly title with keywords, year, and modifiers]
+
+ALTERNATIVE CREATIVE TITLE
+[Clickable title that sparks curiosity]
+
+KEYWORDS
+[5-8 specific search terms this video should target]
+
+DESCRIPTION
+[2-3 sentence description with the primary keyword in the first sentence]
+
+HASHTAGS
+[5-10 relevant hashtags]
 
 TAGS
 [5-10 relevant tags]

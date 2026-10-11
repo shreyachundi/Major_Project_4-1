@@ -94,18 +94,56 @@ export default function ContentIdeas() {
                 background: c.bg, color: c.color,
               }}>{idea.score}</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 14 }}>{idea.title}</div>
-                <div style={{ fontSize: 12.5, color: 'var(--text-dim)', lineHeight: 1.5 }}>{idea.why}</div>
-                <div style={{
-                  fontSize: 11.5, color: 'var(--text-dim)',
-                  marginTop: 6, display: 'flex', gap: 12, flexWrap: 'wrap',
-                }}>
-                  <span>🎯 Predicted: {idea.predictedViews}</span>
-                  <span>⏱ Length: {idea.bestLength}</span>
-                  <span>📅 Upload: {idea.upload}</span>
-                  <span style={{ color: 'var(--accent-2)' }}>→ Click for full script</span>
-                </div>
-              </div>
+  {/* Creative title */}
+  <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 14 }}>{idea.title}</div>
+
+  {/* SEO title */}
+  {idea.seoTitle && (
+    <div style={{
+      marginTop: 6, marginBottom: 8, padding: '8px 12px',
+      background: 'rgba(34,197,94,0.08)',
+      border: '1px solid rgba(34,197,94,0.25)',
+      borderRadius: 6,
+    }}>
+      <div style={{ fontSize: 10.5, color: 'var(--green)', fontWeight: 600, marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        🔍 SEO Title
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.4, fontWeight: 500 }}>
+        {idea.seoTitle}
+      </div>
+    </div>
+  )}
+
+  {/* Keywords */}
+  {idea.keywords && idea.keywords.length > 0 && (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+      {idea.keywords.map((kw, idx) => (
+        <span key={idx} style={{
+          background: 'rgba(124,92,255,0.12)',
+          border: '1px solid rgba(124,92,255,0.3)',
+          color: '#a78bfa',
+          fontSize: 10.5,
+          padding: '3px 8px',
+          borderRadius: 4,
+          fontWeight: 500,
+        }}>
+          #{kw}
+        </span>
+      ))}
+    </div>
+  )}
+
+  <div style={{ fontSize: 12.5, color: 'var(--text-dim)', lineHeight: 1.5 }}>{idea.why}</div>
+  <div style={{
+    fontSize: 11.5, color: 'var(--text-dim)',
+    marginTop: 6, display: 'flex', gap: 12, flexWrap: 'wrap',
+  }}>
+    <span>🎯 Predicted: {idea.predictedViews}</span>
+    <span>⏱ Length: {idea.bestLength}</span>
+    <span>📅 Upload: {idea.upload}</span>
+    <span style={{ color: 'var(--accent-2)' }}>→ Click for full script</span>
+  </div>
+</div>
             </div>
           );
         })}
