@@ -5,15 +5,28 @@ import AskAI from '../components/AskAI.jsx';
 import InsightItem from '../components/InsightItem.jsx';
 import ViewsChart from '../components/charts/ViewsChart.jsx';
 import { api } from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx'; // NEW
 
 export default function Dashboard() {
+  const { updateUser } = useAuth(); // NEW
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
     Promise.all([api.channelSummary(), api.insights()])
-      .then(([s, i]) => { setSummary(s); setInsights(i.insights); })
+      .then(([s, i]) => {
+        setSummary(s);
+        setInsights(i.insights);
+        
+        // NEW: Update the global auth context so the sidebar stays in sync
+        if (s.channel) {
+          updateUser({
+            channelName: s.channel.name,
+            subscribers: s.channel.subscribers,
+          });
+        }
+      })
       .catch(e => setError(e.message));
   }, []);
 

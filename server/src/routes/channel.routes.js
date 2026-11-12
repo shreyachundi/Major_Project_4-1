@@ -5,24 +5,15 @@ import { getChannelData, resolveChannelId } from '../services/youtube.service.js
 import { getMyChannel } from '../services/google.service.js';
 import { updateUserChannel } from '../services/auth.service.js';
 import { getCached, setCached } from '../utils/cache.js';
-import { env } from '../config/env.js';
 
 const router = Router();
 
-// NEW: Connect channel using Google OAuth token (secure — only own channel)
 router.post('/connect-with-google', async (req, res) => {
   try {
-    const { accessToken } = req.body || {};
-    if (!accessToken) return res.status(400).json({ error: 'Access token required' });
+    const { accessToken, userId } = req.body || {};
+    if (!accessToken || !userId) return res.status(400).json({ error: 'Access token and user ID required' });
 
-    // Fetch ONLY the user's own channel (mine=true)
     const channel = await getMyChannel(accessToken);
-
-    // Save to user (using JWT id from token)
-    // But this route doesn't require auth — it's called right after OAuth redirect
-    // Actually we'll accept userId from body since frontend has JWT
-    const userId = req.body.userId;
-    if (!userId) return res.status(400).json({ error: 'User ID required' });
 
     await updateUserChannel(userId, {
       channelId: channel.id,
@@ -38,7 +29,6 @@ router.post('/connect-with-google', async (req, res) => {
   }
 });
 
-// Legacy: connect via pasted URL (keep for reference, or remove later)
 router.post('/connect', requireAuth, async (req, res) => {
   try {
     const { url } = req.body || {};
@@ -66,11 +56,28 @@ router.get('/summary', requireAuth, requireChannel, async (req, res) => {
     const cacheKey = `channel:${req.channelId}`;
     const cached = getCached(cacheKey);
     if (cached) {
+      // Even if data is cached, make sure the user doc is updated
+      await updateUserChannel(req.user.id, {
+        channelId: req.channelId,
+        channelUrl: req.userDoc?.channelUrl || `https://youtube.com/channel/${req.channelId}`,
+        channelName: cached.channel.name,
+        subscribers: cached.channel.subscribers,
+      });
       console.log('✅ Returning cached channel data');
       return res.json(cached);
     }
+    
     const data = await getChannelData(req.channelId);
     setCached(cacheKey, data, 600);
+
+    // Save the fresh data to MongoDB
+    await updateUserChannel(req.user.id, {
+      channelId: req.channelId,
+      channelUrl: req.userDoc?.channelUrl || `https://youtube.com/channel/${req.channelId}`,
+      channelName: data.channel.name,
+      subscribers: data.channel.subscribers,
+    });
+
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });

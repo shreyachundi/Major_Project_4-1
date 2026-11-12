@@ -35,6 +35,7 @@ router.post('/register', async (req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   try {
+    // Fetch user directly from DB (which we just updated in channel.routes.js)
     const user = await findUserById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({ user: publicUser(user) });

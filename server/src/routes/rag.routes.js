@@ -8,7 +8,6 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireChannel);
 
-// Index all recent videos
 router.post('/index', async (req, res) => {
   try {
     const channelData = await getChannelData(req.channelId);
@@ -26,11 +25,10 @@ router.post('/index', async (req, res) => {
     res.json({ ok: true, totalChunks, videos: results });
   } catch (error) {
     console.error('Indexing error:', error.message);
-    res.status(500).json({ error: 'Failed to index videos' });
+    res.status(500).json({ error: 'Failed to index videos: ' + error.message });
   }
 });
 
-// Ask a question with RAG
 router.post('/ask', async (req, res) => {
   try {
     const { question } = req.body || {};
@@ -41,18 +39,18 @@ router.post('/ask', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('RAG error:', error.message);
-    res.status(500).json({ error: 'Failed to answer question' });
+    // Send the real error string back to the frontend
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Search transcripts without LLM (raw results)
 router.post('/search', async (req, res) => {
   try {
     const { query } = req.body || {};
     const results = await retrieveContext(query, req.channelId, 10);
     res.json({ results });
   } catch (error) {
-    res.status(500).json({ error: 'Search failed' });
+    res.status(500).json({ error: 'Search failed: ' + error.message });
   }
 });
 
